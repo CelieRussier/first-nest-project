@@ -1,0 +1,16 @@
+{
+    "type": "mongodb",
+    "host": "localhost",
+    "port": 27017,
+    "loggging": false,
+    "database": "db_first_nest_project",
+    "useUnifiedTopology": true,
+    "entities": ["dist/**/**.entity{.ts,.js}"],
+    "migrations": ["db/migrations/*.js"],
+    "cli": {
+        "migrationsDir": "db/migrations",
+        "entitiesDir": "src"
+    },
+    "synchronize": true,
+    "autoLoadEntities": true
+  }
