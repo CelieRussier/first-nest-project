@@ -3,14 +3,14 @@ import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DeleteResult, ObjectID } from 'typeorm';
+import { InsertOneResult } from 'mongodb';
 
 @Controller('users')
 export class UsersController {
     @Inject()
     usersService: UsersService;
 
-    @Get(':id/bookings')
+    /*@Get(':id/bookings')
     async getBookingsByUserId(@Param('id') id: string): Promise<User[]> {
         return await this.usersService.findUserBookings(id);
     }
@@ -23,7 +23,7 @@ export class UsersController {
     @Get(':id/scheduled-bookings')
     async getUpcomingBookingsByUserId(@Param('id') id: string): Promise<User[]> {
         return await this.usersService.findUserScheduledBookings(id);
-    }
+    }*/
 
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<User> {
@@ -36,17 +36,17 @@ export class UsersController {
     }
 
     @Post()
-    create(@Body() createUserDto: CreateUserDto): Promise<User> {
-        return this.usersService.create(createUserDto);
+    create(@Body() user: User): Promise<InsertOneResult<User>> {
+        return this.usersService.create(user);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+    update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<void> {
         return this.usersService.update(id, updateUserDto);
     }
 
     @Delete(':id')
-    async deleteUser(@Param('id') id: string): Promise<string[] | DeleteResult>  {
-        return await this.usersService.deleteUser(id);
+    async deleteUser(@Param('id') id: string): Promise<void>  {
+        return await this.usersService.delete(id);
     }
 }

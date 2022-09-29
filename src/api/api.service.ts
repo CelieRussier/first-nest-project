@@ -9,9 +9,9 @@ export class ApiService {
 
     findIp(): Observable<AxiosResponse> {
         return this.httpService.get('https://api.ipify.org?format=json')
-            .pipe(map(
-                (response => response.data)
-                )
-        )
+        .pipe(map(
+            (response => response.data)
+            )
+        )        
     };
 }

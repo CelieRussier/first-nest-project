@@ -1,3 +1,3 @@
 import { User } from "../user.entity";
 
-export type CreateUserDto = Omit<User, 'id'>
+export type CreateUserDto = Omit<User, 'booking'>

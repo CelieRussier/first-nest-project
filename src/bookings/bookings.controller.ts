@@ -25,7 +25,7 @@ export class BookingsController {
     }
 
     @Delete(':id')
-    async deleteUser(@Param('id') id: string): Promise<string[] | DeleteResult>  {
+    async deleteUser(@Param('id') id: string): Promise<string[] | void>  {
         return await this.bookingsService.deleteBooking(id);
     }
     

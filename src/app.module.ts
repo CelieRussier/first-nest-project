@@ -10,11 +10,12 @@ import { BookingsModule } from './bookings/bookings.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { ApiModule } from './api/api.module';
 import { HttpModule } from '@nestjs/axios';
+import { DatabaseModule } from './database.module';
 
 const dbConfigFile = join(__dirname, '../ormconfig.json')
 
 @Module({
-  imports: [TypeOrmModule.forRoot(require(dbConfigFile)), UsersModule, BookingsModule, ApiModule, HttpModule],
+  imports: [DatabaseModule, UsersModule, BookingsModule, ApiModule, HttpModule],
   controllers: [AppController],
   providers: [AppService],
 })
