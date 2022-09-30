@@ -1,6 +1,6 @@
 // src/app/users/users.service.ts
 
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -62,7 +62,8 @@ export class UsersService {
     const users = (await this.userCol.find().toArray()) as User[];
 
     if (!users) {
-      throw new NotFoundException("No users registered yet");
+      //throw new NotFoundException("No users registered yet");
+      throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
     }
 
     return users;
@@ -104,9 +105,8 @@ export class UsersService {
 
     return users;
   }
-
+  
   async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
-
     const response = await this.userCol.insertOne({
       _id: randomUUID(),
       firstname: createUserDto.firstname,

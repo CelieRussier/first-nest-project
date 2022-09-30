@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Patch, Param, Body, Inject, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Inject, Delete, UseFilters } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InsertOneResult, UpdateResult } from 'mongodb';
+import { HttpExceptionFilter } from 'src/http-exception.filter';
 
 @Controller('users')
+@UseFilters(HttpExceptionFilter) //<------ peut être positionné sur une seule route ou même dans main.ts : app.useGlobalFilters(new HttpExceptionFilter());
 export class UsersController {
     @Inject()
     usersService: UsersService;
@@ -41,7 +43,7 @@ export class UsersController {
     }
 
     @Get('user-birthday/:id')
-    async findUserNextBirthday(@Param('id') id: string) {
+    async findUserNextBirthday(@Param('id') id: string): Promise<Date> {
         return await this.usersService.findUserNextBirthday(id);
     }
 
@@ -61,7 +63,7 @@ export class UsersController {
     }
 
     @Patch(':id')
-    async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<UpdateResult> {
         return await this.usersService.update(id, updateUserDto);
         //return this.usersService.findOne(id);
     }
