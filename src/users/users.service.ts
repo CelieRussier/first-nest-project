@@ -9,153 +9,153 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
-    private readonly collectionName = "users";
-    
-    public get userCol() {
-      return this.db.collection<User>(this.collectionName);
+  private readonly collectionName = "users";
+  
+  public get userCol() {
+    return this.db.collection<User>(this.collectionName);
+  }
+
+  constructor(
+      @Inject('DATABASE_CONNECTION')
+      private db: Db,
+    ) {
     }
 
-    constructor(
-        @Inject('DATABASE_CONNECTION')
-        private db: Db,
-      ) {
-      }
-
-    async findOne(id: string): Promise<User> {
-
-        const user = (await this.userCol.findOne({_id: id})) as User;
-        
-        if (!user) {
-          throw new NotFoundException(`User with ID=${id} not found`);
-        }
-        return user;
-    }
-
-    async findUserNextBirthday(id: string) {
+  async findOne(id: string): Promise<User> {
 
       const user = (await this.userCol.findOne({_id: id})) as User;
       
-      const nextBirthday = () => {
-
-        const currentDay = new Date();
-        const currentYear = new Date().getFullYear();
-
-        const userBirthday = new Date(user.birthday);
-  
-        const birthdayCurrentYear = new Date(userBirthday.setFullYear(currentYear));
-        const birthdayNextYear = new Date(userBirthday.setFullYear(currentYear + 1));
-
-        if (currentDay < birthdayCurrentYear) {
-          return birthdayCurrentYear;
-        } else {
-          return birthdayNextYear;
-        }
-      }
-
       if (!user) {
         throw new NotFoundException(`User with ID=${id} not found`);
       }
-      return nextBirthday();
+      return user;
   }
 
-    async findAll(): Promise<User[]> {
-      const users = (await this.userCol.find().toArray()) as User[];
+  async findUserNextBirthday(id: string) {
 
-      if (!users) {
-        throw new NotFoundException("No users registered yet");
+    const user = (await this.userCol.findOne({_id: id})) as User;
+    
+    const nextBirthday = () => {
+
+      const currentDay = new Date();
+      const currentYear = new Date().getFullYear();
+
+      const userBirthday = new Date(user.birthday);
+
+      const birthdayCurrentYear = new Date(userBirthday.setFullYear(currentYear));
+      const birthdayNextYear = new Date(userBirthday.setFullYear(currentYear + 1));
+
+      if (currentDay < birthdayCurrentYear) {
+        return birthdayCurrentYear;
+      } else {
+        return birthdayNextYear;
       }
-
-      return users;
     }
 
-    async findAllRecentUpdateFirst(): Promise<User[]> {
-      const users = (await this.userCol.find().sort("updated_at", -1).toArray()) as User[];
+    if (!user) {
+      throw new NotFoundException(`User with ID=${id} not found`);
+    }
+    return nextBirthday();
+}
 
-      if (!users) {
-        throw new NotFoundException("No users registered yet");
-      }
+  async findAll(): Promise<User[]> {
+    const users = (await this.userCol.find().toArray()) as User[];
 
-      return users;
+    if (!users) {
+      throw new NotFoundException("No users registered yet");
     }
 
-    async findAllOldUpdateFirst(): Promise<User[]> {
-      const users = (await this.userCol.find().sort("updated_at", 1).toArray()) as User[];
+    return users;
+  }
 
-      if (!users) {
-        throw new NotFoundException("No users registered yet");
-      }
+  async findAllRecentUpdateFirst(): Promise<User[]> {
+    const users = (await this.userCol.find().sort("updated_at", -1).toArray()) as User[];
 
-      return users;
+    if (!users) {
+      throw new NotFoundException("No users registered yet");
     }
 
-    async findAllWithinDateRange(date_one: string, date_two: string): Promise<User[]> {
-      const users = (await this.userCol.find(
+    return users;
+  }
+
+  async findAllOldUpdateFirst(): Promise<User[]> {
+    const users = (await this.userCol.find().sort("updated_at", 1).toArray()) as User[];
+
+    if (!users) {
+      throw new NotFoundException("No users registered yet");
+    }
+
+    return users;
+  }
+
+  async findAllWithinDateRange(date_one: string, date_two: string): Promise<User[]> {
+    const users = (await this.userCol.find(
+      {
+        updated_at: {
+          $gt: new Date(date_one),
+          $lt: new Date(date_two)
+        }
+      }
+    ).toArray()) as User[];
+
+    if (!users) {
+      throw new NotFoundException(`Not users updated within this date range`);
+    }
+
+    return users;
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
+
+    const response = await this.userCol.insertOne({
+      _id: randomUUID(),
+      firstname: createUserDto.firstname,
+      lastname: createUserDto.lastname,
+      birthday: new Date(createUserDto.birthday),
+      created_at: new Date(),
+      updated_at: new Date()
+    })
+
+    if (response.acknowledged === false) {
+      throw new BadRequestException('An error occured, please try again');
+    }
+
+    return response;
+  }
+  
+  async update(id: string, body: UpdateUserDto): Promise<UpdateResult> {
+
+    const response = await this.userCol.updateOne(
         {
-          updated_at: {
-            $gt: new Date(date_one),
-            $lt: new Date(date_two)
-          }
-        }
-      ).toArray()) as User[];
-
-      if (!users) {
-        throw new NotFoundException(`Not users updated within this date range`);
-      }
-
-      return users;
-    }
-
-    async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
-
-      const response = await this.userCol.insertOne({
-        _id: randomUUID(),
-        firstname: createUserDto.firstname,
-        lastname: createUserDto.lastname,
-        birthday: new Date(createUserDto.birthday),
-        created_at: new Date(),
-        updated_at: new Date()
-      })
-
-      if (response.acknowledged === false) {
-        throw new BadRequestException('An error occured, please try again');
-      }
-
-      return response;
-    }
-    
-    async update(id: string, body: UpdateUserDto): Promise<UpdateResult> {
-
-      const response = await this.userCol.updateOne(
-          {
-            _id: id,
-            updated_at: new Date()
-          },
-          {
-            $set: {
-              updated_at: new Date(),
-                ...body,
-            }
-          },
-      )
-
-      if (response.modifiedCount === 0) {
-        throw new NotFoundException();
-      }
-
-      return response;
-    }
-
-
-    async delete(id: string): Promise<void> {
-    
-        const response = await this.userCol.deleteOne({
           _id: id,
-        });
-    
-        if (response.deletedCount === 0) {
-          throw new NotFoundException;
-        }
+          updated_at: new Date()
+        },
+        {
+          $set: {
+            updated_at: new Date(),
+              ...body,
+          }
+        },
+    )
+
+    if (response.modifiedCount === 0) {
+      throw new NotFoundException();
     }
+
+    return response;
+  }
+
+
+  async delete(id: string): Promise<void> {
+  
+      const response = await this.userCol.deleteOne({
+        _id: id,
+      });
+  
+      if (response.deletedCount === 0) {
+        throw new NotFoundException;
+      }
+  }
 
 }
 

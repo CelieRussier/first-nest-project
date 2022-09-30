@@ -73,7 +73,7 @@ export class BookingsService {
   
 
     async create(createBookingDto: CreateBookingDto): Promise<InsertOneResult<Booking>> {
-        
+        // a revoir, trop long => enum ? type ? interface ?
         return await this.bookingCol.insertOne({
             _id: randomUUID(),
             departureCoordinates: createBookingDto.departureCoordinates,
