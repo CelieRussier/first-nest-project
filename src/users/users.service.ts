@@ -1,7 +1,6 @@
 // src/app/users/users.service.ts
 
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-//import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -9,7 +8,6 @@ import { Db, InsertOneResult, ObjectId } from 'mongodb';
 import { randomUUID } from 'crypto';
 import { Booking } from 'src/bookings/booking.entity';
 
-//import { DeleteResult, MongoRepository, ObjectID } from 'typeorm';
 @Injectable()
 export class UsersService {
     private readonly collectionName = "users";
@@ -24,21 +22,9 @@ export class UsersService {
       ) {
       }
 
-    async getUsers(): Promise<User[]> {
-        const users = (await this.userCol.find().toArray()) as User[];
-        return users;
-        // return users.map(user => {
-        //   return {
-        //     firstname: user.firstname,
-
-        //   } as User
-        // })
-    }
-
     async findOne(id: string): Promise<User> {
-        //const convertedId: ObjectId = new ObjectId(id);
 
-        const user = (await this.userCol.findOne({id: id})) as User;
+        const user = (await this.userCol.findOne({_id: id})) as User;
         
         if (!user) {
           throw new NotFoundException(`User with ID=${id} not found`);
@@ -46,47 +32,53 @@ export class UsersService {
         return user;
     }
 
-    async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
-        //const user = this.usersRepository.create(createUserDto);
-        //return await this.usersRepository.save(user);
-      
-        return await this.userCol.insertOne({
-          id: randomUUID(),
-          firstname: createUserDto.firstname,
-          lastname: createUserDto.lastname
-        })
+    async findAll(): Promise<User[]> {
+      const users = (await this.userCol.find().toArray()) as User[];
+      return users;
     }
 
-    /*async update(id: string, updateUserDto: UpdateUserDto) {
-        const convertedId: ObjectID = new ObjectId(id);
-        const user = await this.usersRepository.preload({
-          id: convertedId,
-          ...updateUserDto,
-        });
-        if (!user) {
-            throw new NotFoundException(`User with ID=${id} not found`);
-          }
-        return await this.usersRepository.save(user);
-      }*/
+    async findAllRecentUpdateFirst(): Promise<User[]> {
+      const users = (await this.userCol.find().sort("updated_at", -1).toArray()) as User[];
+      return users;
+    }
+
+    async findAllOldUpdateFirst(): Promise<User[]> {
+      const users = (await this.userCol.find().sort("updated_at", 1).toArray()) as User[];
+      return users;
+    }
+
+    async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
+
+        return await this.userCol.insertOne({
+          _id: randomUUID(),
+          firstname: createUserDto.firstname,
+          lastname: createUserDto.lastname,
+          birthday: new Date(createUserDto.birthday),
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+    }
     
     async update(id: string, body: UpdateUserDto): Promise<void> {
 
-    await this.userCol.updateOne(
-        {
-        id: id,
-        },
-        {
-        $set: {
-            ...body,
-        },
-        },
-    );
+      await this.userCol.updateOne(
+          {
+            _id: id,
+            updated_at: new Date()
+          },
+          {
+            $set: {
+              updated_at: new Date(),
+                ...body,
+            }
+          },
+      );
     }
 
 
     async delete(id: string): Promise<void> {
     
-        const response = await this.db.collection('users').deleteOne({
+        const response = await this.userCol.deleteOne({
           _id: id,
         });
     
@@ -106,7 +98,27 @@ export class UsersService {
         });
     }*/
 
-/*async deleteUser(id: string): Promise<string[] | DeleteResult> {
+/*
+
+async update(id: string, updateUserDto: UpdateUserDto) {
+        const convertedId: ObjectID = new ObjectId(id);
+        const user = await this.usersRepository.preload({
+          id: convertedId,
+          ...updateUserDto,
+        });
+        if (!user) {
+            throw new NotFoundException(`User with ID=${id} not found`);
+          }
+        return await this.usersRepository.save(user);
+      }
+
+ async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
+        //const user = this.usersRepository.create(createUserDto);
+        //return await this.usersRepository.save(user);
+  }
+
+
+async deleteUser(id: string): Promise<string[] | DeleteResult> {
         const convertedId: ObjectID = new ObjectId(id);
         const user: User = await this.usersRepository.findOneBy({_id: convertedId});
         const err: string[] = [];

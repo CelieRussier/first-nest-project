@@ -1,3 +1,3 @@
 import { User } from "../../users/user.entity";
 
-export type AddBookingToUserDto = Pick<User, 'id'>
+export type AddBookingToUserDto = Pick<User, '_id'>

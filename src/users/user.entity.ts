@@ -5,7 +5,7 @@ import { Booking } from "../bookings/booking.entity";
 export class User {
 
     //@ObjectIdColumn() id: ObjectID;
-    id: string;
+    _id: string;
 
     //@Column({ length: 80 })
     firstname:string;
@@ -14,8 +14,14 @@ export class User {
     //@Column({ length: 80 })
     lastname:string;
 
+    birthday: Date;
+
     //@OneToMany(() => Booking, (booking) => booking.user)
     bookings?: Booking[]
+
+    created_at: Date;
+
+    updated_at: Date;
 
     /*constructor(user?: Partial<User>) {
         Object.assign(this, user);
