@@ -33,6 +33,44 @@ export class BookingsService {
         const bookings = (await this.bookingCol.find().toArray()) as Booking[];
         return bookings;
       }
+    
+    async findAllRecentUpdateFirst(): Promise<Booking[]> {
+    const bookings = (await this.bookingCol.find().sort("updated_at", -1).toArray()) as Booking[];
+
+    if (!bookings) {
+        throw new NotFoundException("No users registered yet");
+    }
+
+    return bookings;
+    }
+
+    async findAllOldUpdateFirst(): Promise<Booking[]> {
+    const bookings = (await this.bookingCol.find().sort("updated_at", 1).toArray()) as Booking[];
+
+    if (!bookings) {
+        throw new NotFoundException("No users registered yet");
+    }
+
+    return bookings;
+    }
+
+    async findAllWithinDateRange(date_one: string, date_two: string): Promise<Booking[]> {
+    const bookings = (await this.bookingCol.find(
+        {
+        updated_at: {
+            $gt: new Date(date_one),
+            $lt: new Date(date_two)
+        }
+        }
+    ).toArray()) as Booking[];
+
+    if (!bookings) {
+        throw new NotFoundException(`Not users updated within this date range`);
+    }
+
+    return bookings;
+    }
+  
 
     async create(createBookingDto: CreateBookingDto): Promise<InsertOneResult<Booking>> {
         
@@ -46,9 +84,9 @@ export class BookingsService {
             user: createBookingDto.user,
             created_at: new Date(),
             updated_at: new Date()
-          })
+            })
     }
-    
+
     async update(id: string, body: UpdateBookingDto): Promise<void> {
         await this.bookingCol.updateOne(
             {
@@ -68,7 +106,7 @@ export class BookingsService {
         const response = await this.bookingCol.deleteOne({
             _id: id,
         });
-    
+
         if (response.deletedCount === 0) {
             throw new NotFoundException;
         }

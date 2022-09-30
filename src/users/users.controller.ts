@@ -35,6 +35,16 @@ export class UsersController {
         return await this.usersService.findAllOldUpdateFirst();
     }
 
+    @Get('updated-between/:date_one/:date_two')
+    async findAllWithinDateRange(@Param('date_one') date_one: string, @Param('date_two') date_two: string): Promise<User[]> {
+        return await this.usersService.findAllWithinDateRange(date_one, date_two);
+    }
+
+    @Get('user-birthday/:id')
+    async findUserNextBirthday(@Param('id') id: string) {
+        return await this.usersService.findUserNextBirthday(id);
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<User> {
         return await this.usersService.findOne(id);
@@ -52,8 +62,8 @@ export class UsersController {
 
     @Patch(':id')
     async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-        await this.usersService.update(id, updateUserDto);
-        return this.usersService.findOne(id);
+        return await this.usersService.update(id, updateUserDto);
+        //return this.usersService.findOne(id);
     }
 
     @Delete(':id')

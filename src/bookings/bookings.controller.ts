@@ -30,6 +30,21 @@ export class BookingsController {
         return await this.bookingsService.findUserBookings(id);
     }
 
+    @Get('recent-update-first')
+    async findAllRecentUpdateFirst(): Promise<Booking[]> {
+        return await this.bookingsService.findAllRecentUpdateFirst();
+    }
+
+    @Get('old-update-first')
+    async findAllOldUpdateFirst(): Promise<Booking[]> {
+        return await this.bookingsService.findAllOldUpdateFirst();
+    }
+
+    @Get('updated-between/:date_one/:date_two')
+    async findAllWithinDateRange(@Param('date_one') date_one: string, @Param('date_two') date_two: string): Promise<Booking[]> {
+        return await this.bookingsService.findAllWithinDateRange(date_one, date_two);
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<Booking> {
         return await this.bookingsService.findOne(id);
