@@ -27,6 +27,19 @@ export class UsersController {
         return await this.usersService.findUserBookings(id);
     }*/
     
+    @Get('users-aggregated-by-distance-from/:x')
+    async findUsersAggregatedByDistance(x: string) : Promise<User[]> {
+        return await this.usersService.findUsersAggregatedByDistance(x);
+    }
+
+    @Get ('maxDistance/:maxDistance/maxDistanceOrigin/:maxDistanceOrigin')
+    async findClosestUsersFromPosition(
+        @Param('maxDistance') maxDistance: string, 
+        @Param('maxDistanceOrigin') maxDistanceOrigin: string)
+        : Promise<User[]> {
+        return await this.usersService.findClosestUsersFromPosition(maxDistance, maxDistanceOrigin);
+    }
+
     @Get('recent-update-first')
     async findAllRecentUpdateFirst(): Promise<User[]> {
         return await this.usersService.findAllRecentUpdateFirst();

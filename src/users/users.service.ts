@@ -6,6 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Db, InsertOneResult, UpdateResult } from 'mongodb';
 import { randomUUID } from 'crypto';
+//import GeoJSON, {GeoJSON} from 'geojson';
 
 @Injectable()
 export class UsersService {
@@ -105,20 +106,71 @@ export class UsersService {
 
     return users;
   }
-  
+
+  async findClosestUsersFromPosition (maxDistance: string, maxDistanceOrigin: string): Promise<User[]> {
+    //this.userCol.createIndex({ position: "2dsphere" }); => inséré directement via Compass
+
+    const splitMaxDistanceOrigin = maxDistanceOrigin.split(',');
+    const maxDistanceOriginArrayNumber = [parseFloat(splitMaxDistanceOrigin[0]),parseFloat(splitMaxDistanceOrigin[1])];
+    
+    const users = (await this.userCol.find(
+      {
+        position: {
+          $near: {
+              $geometry:{ 
+                  type: "Point", 
+                  coordinates: maxDistanceOriginArrayNumber //ex: [45.757, 4.832]
+              },
+              $maxDistance: parseInt(maxDistance)
+          }
+      }
+      }
+    ).toArray()) as User[];
+
+    return users;
+  }
+
+  async findUsersAggregatedByDistance(x: string): Promise<User[]> {
+    const users = (await this.userCol.aggregate([
+      {
+        $project: {
+          rounded_distance: {
+             $filter: {
+                input: "$_id",
+                as: "user_id",
+                cond: { $gte: [ "$$item.price", 100 ] }
+             }
+          }
+       }
+      }
+    ]));
+    return users;
+  }
+
   async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
-    const response = await this.userCol.insertOne({
+    var GeoJSON = require('geojson');
+  
+    const response = this.userCol.insertOne({
       _id: randomUUID(),
       firstname: createUserDto.firstname,
       lastname: createUserDto.lastname,
       birthday: new Date(createUserDto.birthday),
       created_at: new Date(),
-      updated_at: new Date()
-    })
+      updated_at: null,
+      lat: createUserDto.lat,
+      lng: createUserDto.lng,
+      position: {
+        "type" : "Point",
+        "coordinates" : [
+          createUserDto.lat,
+          createUserDto.lng
+        ]
+      }
+    });
 
-    if (response.acknowledged === false) {
+    /*if ((await response).acknowledged === false) {
       throw new BadRequestException('An error occured, please try again');
-    }
+    }*/
 
     return response;
   }
