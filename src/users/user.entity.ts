@@ -1,23 +1,46 @@
 //import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ObjectIdColumn, ObjectID, Index } from 'typeorm';
-import { GeoJsonObject, GeoJsonTypes, Point } from "geojson";
+import { Exclude, Expose, Type } from "class-transformer";
+import { IsString } from "class-validator";
 import { Booking } from "../bookings/booking.entity";
 
 //@Entity('users')
 export class User {
 
+    constructor(partial: Partial<User> = {}) {
+        Object.assign(this, partial);
+      }
+
     //@ObjectIdColumn() id: ObjectID;
     _id: string;
+
 
     //@Column({ length: 80 })
     firstname:string;
 
     //@Index()
     //@Column({ length: 80 })
-    lastname:string;
+    @IsString()
+    @Exclude()
+    private _lastname:string;
 
-    birthday: Date;
+    @Expose()
+    get lastname() {
+      return this._lastname
+    }
+
+    set lastname (v: string) {
+      this._lastname = v ? v.toUpperCase() : undefined
+    }
+   
+    @Expose({groups: ['api']})
+    get fullName () {
+      return this.firstname + ' ' + this.lastname
+    }
+    
+    birthday!: Date;
 
     //@OneToMany(() => Booking, (booking) => booking.user)
+    @Type(() => Booking)
     bookings?: Booking[]
 
     created_at: Date;

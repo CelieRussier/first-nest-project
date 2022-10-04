@@ -4,12 +4,25 @@ import { Injectable, Inject, NotFoundException, BadRequestException, HttpExcepti
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Db, InsertOneResult, UpdateResult } from 'mongodb';
+import { Db, Document, InsertOneResult, UpdateResult } from 'mongodb';
 import { randomUUID } from 'crypto';
-//import GeoJSON, {GeoJSON} from 'geojson';
+import { GeoJsonObject } from 'geojson';
+import { instanceToPlain, plainToClass, plainToInstance } from 'class-transformer';
+import moment from 'moment';
+import _ from 'lodash';
 
 @Injectable()
 export class UsersService {
+
+  async testLodash() {
+    let object = { 'a': [{ 'b': { 'c': 3 } }] };
+    await _.set(object, 'a[0].b.c', 4);
+    const js = parseFloat('08');
+    const lodash = _.parseInt('08,123456789');
+    console.log('js', js);
+    console.log('lodash', lodash);
+    return object;
+  }
   private readonly collectionName = "users";
   
   public get userCol() {
@@ -32,11 +45,17 @@ export class UsersService {
       return user;
   }
 
+  async findUserFullName(id: string): Promise<string> {
+    const user = (await this.userCol.findOne({_id: id})) as User;
+    const userToClass = plainToInstance(User, user);
+    return userToClass.fullName;
+  }
+
   async findUserNextBirthday(id: string) {
 
     const user = (await this.userCol.findOne({_id: id})) as User;
     
-    const nextBirthday = () => {
+    /*const nextBirthday = () => {
 
       const currentDay = new Date();
       const currentYear = new Date().getFullYear();
@@ -51,16 +70,24 @@ export class UsersService {
       } else {
         return birthdayNextYear;
       }
-    }
+    }*/
+
+      const userBirthdate = moment(user.birthday);
+
+      const years = moment().diff(userBirthdate, 'years');
+
+      const nextBirthday = moment(userBirthdate).add(years + 1, 'years').format('YYYY-MM-DD');
 
     if (!user) {
       throw new NotFoundException(`User with ID=${id} not found`);
     }
-    return nextBirthday();
+    return nextBirthday;
 }
 
   async findAll(): Promise<User[]> {
-    const users = (await this.userCol.find().toArray()) as User[];
+
+    const users = (await this.userCol.find().toArray()).map(u => plainToInstance(User, u));
+
 
     if (!users) {
       //throw new NotFoundException("No users registered yet");
@@ -130,31 +157,69 @@ export class UsersService {
     return users;
   }
 
-  async findUsersAggregatedByDistance(x: string): Promise<User[]> {
+  async findUsersAggregatedByDistance(x: string): Promise<Document[]> {
+    const splitX = x.split(',');
+    const xArrayNumber = [parseFloat(splitX[0]),parseFloat(splitX[1])];
+    const xPoint: Object = {
+      "type" : "Point",
+      "coordinates" : [
+        xArrayNumber[0],
+        xArrayNumber[1]
+      ]
+    } as GeoJsonObject;
+
     const users = (await this.userCol.aggregate([
       {
-        $project: {
-          rounded_distance: {
-             $filter: {
-                input: "$_id",
-                as: "user_id",
-                cond: { $gte: [ "$$item.price", 100 ] }
-             }
-          }
+        $geoNear: {
+          near: { type: "Point", coordinates: xArrayNumber },
+          key: "position",
+          distanceField: "dist.calculated",
+          spherical: true
        }
+      },
+      {
+        $addFields: {
+          rounded_distance: { $round: ["$dist.calculated", -2] }
+        }
+      },
+      {
+        $group: {
+          _id: "$rounded_distance",
+          users: { $push: "$_id"}
+        }
+      },
+      {
+        $project: {
+          '_id': false,
+          'distance_rounded': '$_id',
+          users: '$users'
+        }
+      },
+      /*{
+        $set: {
+          'distance_rounded_2': {
+            $cond: [
+              
+            ]
+          },
+         }
+      },*/
+      { 
+        $sort : { distance_rounded : 1 }
       }
-    ]));
+      
+    ]).toArray());
     return users;
   }
 
-  async create(createUserDto: CreateUserDto): Promise<InsertOneResult<User>> {
-    var GeoJSON = require('geojson');
-  
-    const response = this.userCol.insertOne({
+  async create(createUserDto: CreateUserDto): Promise<InsertOneResult<CreateUserDto>> {
+    //var GeoJSON = require('geojson');
+    
+    const u = plainToInstance(User, {
       _id: randomUUID(),
       firstname: createUserDto.firstname,
       lastname: createUserDto.lastname,
-      birthday: new Date(createUserDto.birthday),
+      birthday: createUserDto.birthday,
       created_at: new Date(),
       updated_at: null,
       lat: createUserDto.lat,
@@ -165,12 +230,10 @@ export class UsersService {
           createUserDto.lat,
           createUserDto.lng
         ]
-      }
-    });
-
-    /*if ((await response).acknowledged === false) {
-      throw new BadRequestException('An error occured, please try again');
-    }*/
+      },
+    })
+    const toSaved = instanceToPlain(u, {groups: ['db']}) as User
+    const response = await this.userCol.insertOne(toSaved);
 
     return response;
   }

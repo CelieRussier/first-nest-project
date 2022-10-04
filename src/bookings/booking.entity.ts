@@ -1,3 +1,4 @@
+import { Expose } from 'class-transformer';
 import { Timestamp } from 'mongodb';
 import { AddBookingToUserDto } from './dto/add-booking-to-user.dto';
 
@@ -29,7 +30,7 @@ export class Booking {
 
     updated_at: Date;
 
-    /*constructor(booking?: Partial<Booking>) {
+    constructor(booking?: Partial<Booking>) {
         Object.assign(this, booking);
-    }*/
+    }
     }

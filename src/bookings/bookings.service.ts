@@ -6,6 +6,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { Db, FindCursor, InsertOneResult, WithId } from 'mongodb';
 import { randomUUID } from 'crypto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class BookingsService {
@@ -73,8 +74,8 @@ export class BookingsService {
   
 
     async create(createBookingDto: CreateBookingDto): Promise<InsertOneResult<Booking>> {
-        // a revoir, trop long => enum ? type ? interface ?
-        return await this.bookingCol.insertOne({
+
+        const booking = plainToInstance(Booking, {
             _id: randomUUID(),
             departureCoordinates: createBookingDto.departureCoordinates,
             arrivalCoordinates: createBookingDto.arrivalCoordinates,
@@ -84,8 +85,12 @@ export class BookingsService {
             user: createBookingDto.user,
             created_at: new Date(),
             updated_at: new Date()
-            })
-    }
+        })
+
+        const toSave = instanceToPlain(booking, {groups: ['db']}) as Booking
+        return await this.bookingCol.insertOne(toSave);
+              
+        }
 
     async update(id: string, body: UpdateBookingDto): Promise<void> {
         await this.bookingCol.updateOne(

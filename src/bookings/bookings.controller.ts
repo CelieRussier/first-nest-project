@@ -11,7 +11,7 @@ export class BookingsController {
     bookingsService: BookingsService;
 
     @Post()
-    async create(@Body() createBookingDto: Booking): Promise<InsertOneResult<Booking>> {
+    async create(@Body() createBookingDto: CreateBookingDto): Promise<InsertOneResult<Booking>> {
         return await this.bookingsService.create(createBookingDto);
     }
 

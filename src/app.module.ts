@@ -19,10 +19,7 @@ const dbConfigFile = join(__dirname, '../ormconfig.json')
 @Module({
   imports: [ConfigModule.forRoot(),DatabaseModule, UsersModule, BookingsModule, ApiModule, HttpModule],
   controllers: [AppController],
-  providers: [{
-    provide: APP_INTERCEPTOR,
-    useClass: ResponseInterceptor
-  }, AppService],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
